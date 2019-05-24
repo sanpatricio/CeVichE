@@ -30,13 +30,28 @@ with open(filename) as inputfile:
                 agentSpoof = {'User-Agent': 'Mozilla/5.0'}
 
                 sauce = urllib2.Request(fullURL,headers=agentSpoof)
-                page  = urllib2.urlopen(sauce)
-                soup  = bs.BeautifulSoup(page,'lxml')
+                try:
+                        page  = urllib2.urlopen(sauce)
+                except urllib2.HTTPError, e:
+                        status_code = e.code
+                        print ("%s: An HTTP error has occured - %s" % (cve, status_code))
+                except urllib2.URLError, e:
+                        status_code = e.code
+                        print ("%s: A URL error has occured - %s" % (cve, status_code))
+                except (TypeError, AttributeError, KeyError) as e:
+                        status_code = e.code
+                        print ("%s: An unspecified error has occured - %s" % (cve, status_code))
+                else:
+                        status_code = page.code
+                        soup  = bs.BeautifulSoup(page,'lxml')
+                
+                        page  = urllib2.urlopen(sauce)
+                        soup  = bs.BeautifulSoup(page,'lxml')
 
-                theRows = soup.find_all('tr')
-                for row in theRows:
-                        technology = row.find('th', text=re.compile(r"Red Hat Enterprise Linux [67]"))
-                        if technology:
-                                os    = technology.string
-                                state = row.find('td', attrs={'headers':'th-state'}).string
-                                print ("%s: %s is %s" % (cve, os, state))
+                        theRows = soup.find_all('tr')
+                        for row in theRows:
+                                technology = row.find('th', text=re.compile(r"Red Hat Enterprise Linux [67]"))
+                                if technology:
+                                        os    = technology.string
+                                        state = row.find('td', attrs={'headers':'th-state'}).string
+                                        print ("%s: %s is %s" % (cve, os, state))
